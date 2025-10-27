@@ -11,10 +11,15 @@ class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ServiceCategorySerializer
     
     def list(self, request, *args, **kwargs):
+        print("🔍 ServiceCategoryViewSet.list() called")
+        print(f"📊 Request method: {request.method}")
+        print(f"🌐 Request headers: {dict(request.headers)}")
+        
         cache_key = 'service_categories_list'
         cached_data = cache.get(cache_key)
         
         if cached_data:
+            print(f"✅ Returning cached data: {len(cached_data)} categories")
             return Response({
                 'error': False,
                 'message': 'Service categories retrieved successfully',
@@ -22,11 +27,15 @@ class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
             })
         
         queryset = self.get_queryset()
+        print(f"📋 Queryset count: {queryset.count()}")
+        
         serializer = self.get_serializer(queryset, many=True)
+        print(f"📝 Serialized data: {serializer.data}")
         
         # Cache for 1 hour
         cache.set(cache_key, serializer.data, 3600)
         
+        print(f"✅ Returning fresh data: {len(serializer.data)} categories")
         return Response({
             'error': False,
             'message': 'Service categories retrieved successfully',
@@ -40,13 +49,19 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ['service_category']
     
     def list(self, request, *args, **kwargs):
+        print("🔍 ServiceViewSet.list() called")
+        print(f"📊 Request method: {request.method}")
+        print(f"🌐 Request headers: {dict(request.headers)}")
+        
         category_id = request.query_params.get('category_id')
+        print(f"🏷️ Category ID filter: {category_id}")
         
         if category_id:
             cache_key = f'services_category_{category_id}'
             cached_data = cache.get(cache_key)
             
             if cached_data:
+                print(f"✅ Returning cached data for category {category_id}: {len(cached_data)} services")
                 return Response({
                     'error': False,
                     'message': 'Services retrieved successfully',
@@ -54,11 +69,13 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
                 })
             
             queryset = self.get_queryset().filter(service_category_id=category_id)
+            print(f"📋 Filtered queryset count: {queryset.count()}")
         else:
             cache_key = 'services_all'
             cached_data = cache.get(cache_key)
             
             if cached_data:
+                print(f"✅ Returning cached data for all services: {len(cached_data)} services")
                 return Response({
                     'error': False,
                     'message': 'Services retrieved successfully',
@@ -66,12 +83,15 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
                 })
             
             queryset = self.get_queryset()
+            print(f"📋 All services queryset count: {queryset.count()}")
         
         serializer = self.get_serializer(queryset, many=True)
+        print(f"📝 Serialized data: {serializer.data}")
         
         # Cache for 1 hour
         cache.set(cache_key, serializer.data, 3600)
         
+        print(f"✅ Returning fresh data: {len(serializer.data)} services")
         return Response({
             'error': False,
             'message': 'Services retrieved successfully',
