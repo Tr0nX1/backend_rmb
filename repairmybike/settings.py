@@ -114,30 +114,27 @@ WSGI_APPLICATION = 'repairmybike.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': get_env('DB_NAME', default='repairmybike_final'),
-#         'USER': get_env('DB_USER', default='postgres'),
-#         'PASSWORD': get_env('DB_PASSWORD', default='1234'),
-#         'HOST': get_env('DB_HOST', default='localhost'),
-#         'PORT': get_env('DB_PORT', default='5432'),
-#     }
-# }
+import dj_database_url
 
+# Use DATABASE_URL if available, otherwise fall back to individual settings
+DATABASE_URL = config('DATABASE_URL', default=None)
 
-
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    # Fallback to individual database settings
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='railway'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 # Redis Cache Configuration
 if DEBUG:
@@ -215,12 +212,12 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Razorpay Configuration
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 RAZORPAY_ENABLED = config('RAZORPAY_ENABLED', default=False, cast=bool)
 
 # Staff API Key
-STAFF_API_KEY = config('STAFF_API_KEY')
+STAFF_API_KEY = config('STAFF_API_KEY', default='')
 
 # Security Settings
 if not DEBUG:
