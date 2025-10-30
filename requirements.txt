@@ -1,5 +1,4 @@
 
-
 # Authentication and Security
 descope==1.0.0
 PyJWT==2.8.0
