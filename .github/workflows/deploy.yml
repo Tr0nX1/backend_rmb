@@ -57,6 +57,11 @@ jobs:
         echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
         echo "DB_HOST=localhost" >> $GITHUB_ENV
         echo "DB_PORT=5432" >> $GITHUB_ENV
+        echo "RAZORPAY_KEY_ID=" >> $GITHUB_ENV
+        echo "RAZORPAY_KEY_SECRET=" >> $GITHUB_ENV
+        echo "RAZORPAY_ENABLED=False" >> $GITHUB_ENV
+        echo "STAFF_API_KEY=test-staff-api-key" >> $GITHUB_ENV
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> $GITHUB_ENV
         
     - name: Run Django system checks
       run: |

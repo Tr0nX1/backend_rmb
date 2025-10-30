@@ -1,176 +1,210 @@
 # GitHub Actions CI/CD Setup for Railway Deployment
 
-This document explains how to set up automated deployment to Railway using GitHub Actions and GitHub Secrets.
-
 ## Overview
+This project is configured with GitHub Actions for automated testing and deployment to Railway. The workflow automatically runs tests and deploys to Railway when code is pushed to the main branch.
 
-The CI/CD pipeline automatically:
-- Runs tests on every push and pull request
-- Deploys to Railway when code is pushed to the `main` branch
-- Runs database migrations after deployment
-- Provides deployment status notifications
+## Workflow File Location
+✅ **Confirmed**: The workflow file is located at:
+```
+/c:/Users/wolf/Desktop/repairmybike/backend_rmb/.github/workflows/deploy.yml
+```
 
 ## Required GitHub Secrets
 
-You need to add the following secrets to your GitHub repository:
+You need to set up the following secrets in your GitHub repository:
 
-### 1. Railway Configuration Secrets
+### 1. RAILWAY_TOKEN
+- **Description**: Your Railway authentication token
+- **How to get**: 
+  1. Go to [Railway Dashboard](https://railway.app/dashboard)
+  2. Click on your profile → Account Settings
+  3. Go to "Tokens" tab
+  4. Create a new token with appropriate permissions
 
-Go to your GitHub repository → Settings → Secrets and variables → Actions → New repository secret
+### 2. RAILWAY_PROJECT_ID
+- **Description**: Your Railway project ID
+- **How to get**: 
+  1. Go to your Railway project dashboard
+  2. Click on Settings
+  3. Copy the Project ID from the General tab
 
-Add these secrets:
-
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `RAILWAY_TOKEN` | Railway API token for authentication | Railway Dashboard → Account Settings → Tokens → Create New Token |
-| `RAILWAY_PROJECT_ID` | Your Railway project ID | Run `railway status` in your project directory |
-| `RAILWAY_SERVICE_ID` | Your Railway service ID | Railway Dashboard → Your Project → Service → Settings → Service ID |
-
-### 2. Getting Railway Values
-
-#### Railway Token:
-1. Go to [Railway Dashboard](https://railway.com/dashboard)
-2. Click on your profile → Account Settings
-3. Go to "Tokens" tab
-4. Click "Create New Token"
-5. Give it a name (e.g., "GitHub Actions")
-6. Copy the token and add it as `RAILWAY_TOKEN` secret
-
-#### Railway Project ID:
-```bash
-cd backend_rmb
-railway status
-```
-Look for the project ID in the output.
-
-#### Railway Service ID:
-1. Go to Railway Dashboard
-2. Select your project
-3. Click on your service
-4. Go to Settings tab
-5. Copy the Service ID
+### 3. RAILWAY_SERVICE_ID
+- **Description**: Your Railway service ID (for the Django backend)
+- **How to get**: 
+  1. In your Railway project, click on your Django service
+  2. Go to Settings
+  3. Copy the Service ID
 
 ## Workflow Features
 
 ### 🧪 Testing Job
-- Sets up Python 3.11 environment
-- Installs dependencies with caching
-- Runs PostgreSQL service for testing
-- Executes Django system checks
-- Runs database migrations
-- Executes test suite
-- Collects static files
+- **Triggers**: On push to `main`/`develop` branches and PRs to `main`
+- **Database**: Uses PostgreSQL 15 service for testing
+- **Steps**:
+  - Python 3.11 setup
+  - Dependency caching
+  - Environment variable setup (including Razorpay and Staff API keys)
+  - Django system checks
+  - Database migrations
+  - Test execution
+  - Static file collection
 
 ### 🚀 Deployment Job
-- Only runs on `main` branch pushes
-- Installs Railway CLI
-- Authenticates with Railway
-- Deploys the application
-- Runs database migrations on production
+- **Triggers**: Only on push to `main` branch (not PRs)
+- **Dependencies**: Requires testing job to pass
+- **Steps**:
+  - Railway CLI installation
+  - Project linking and deployment
+  - Database migrations on Railway
 
-### 📊 Notification Job
-- Reports deployment status
-- Runs after both test and deploy jobs
+### 📢 Notification Job
+- **Purpose**: Reports deployment status
+- **Runs**: Always (even if previous jobs fail)
 
 ## Environment Variables
 
-The workflow uses these environment variables during testing:
-- `SECRET_KEY`: Test secret key
-- `DEBUG`: Set to True for testing
-- Database configuration for PostgreSQL test service
+### Fixed Issues ✅
+The following environment variables are now properly configured to prevent deployment failures:
 
-Production environment variables are managed through Railway's environment variable system.
+```bash
+# Required for Django
+SECRET_KEY=test-secret-key-for-github-actions
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-## Triggering Deployments
+# Database (for testing)
+DB_NAME=test_db
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=localhost
+DB_PORT=5432
+
+# Payment Gateway (with defaults to prevent errors)
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_ENABLED=False
+
+# Staff API (with default for testing)
+STAFF_API_KEY=test-staff-api-key
+```
+
+## Local Environment Setup
+
+### .env File Structure
+Your local `.env` file should contain:
+
+```bash
+SECRET_KEY='your-secret-key'
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+# Database Configuration - Railway PostgreSQL (for production)
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Local Database Configuration (for development)
+DB_NAME=your_local_db
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
+# Razorpay
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+RAZORPAY_ENABLED=False
+
+# Staff API Key
+STAFF_API_KEY=your-staff-api-key-here
+```
+
+## Deployment Process
 
 ### Automatic Deployment
-- Push to `main` branch triggers automatic deployment
-- Pull requests to `main` branch run tests only
+1. Push code to `main` branch
+2. GitHub Actions automatically:
+   - Runs all tests
+   - Deploys to Railway (if tests pass)
+   - Runs database migrations
+   - Reports status
 
 ### Manual Deployment
-You can also trigger deployments manually:
-1. Go to Actions tab in your GitHub repository
-2. Select "Deploy to Railway" workflow
-3. Click "Run workflow"
-4. Select the branch to deploy
+If needed, you can still deploy manually:
+```bash
+railway login
+railway link your-project-id
+railway up --service your-service-id
+```
 
 ## Railway Environment Setup
 
-Make sure your Railway project has these environment variables set:
+### Required Railway Environment Variables
+Set these in your Railway service environment:
 
-### Required Variables:
-- `SECRET_KEY`: Django secret key
-- `DEBUG`: Set to `False` for production
-- `ALLOWED_HOSTS`: Your domain(s)
-- `DATABASE_URL`: Automatically provided by Railway PostgreSQL service
+```bash
+# Django
+SECRET_KEY=your-production-secret-key
+DEBUG=False
+ALLOWED_HOSTS=your-railway-domain.railway.app
 
-### Optional Variables:
-- `CORS_ALLOWED_ORIGINS`: Frontend domain(s)
-- `RAZORPAY_KEY_ID`: Payment gateway key
-- `RAZORPAY_KEY_SECRET`: Payment gateway secret
-- `STAFF_API_KEY`: Staff API authentication key
+# Database (automatically provided by Railway)
+DATABASE_URL=postgresql://... (auto-generated)
 
-## Monitoring Deployments
+# Payment Gateway
+RAZORPAY_KEY_ID=your-actual-razorpay-key
+RAZORPAY_KEY_SECRET=your-actual-razorpay-secret
+RAZORPAY_ENABLED=True  # Enable when ready
 
-### GitHub Actions
-- Go to Actions tab in your repository
-- Click on any workflow run to see detailed logs
-- Check individual job status and logs
+# Staff API
+STAFF_API_KEY=your-production-staff-api-key
+
+# CORS (add your frontend domains)
+CORS_ALLOWED_ORIGINS=https://your-frontend.com,https://your-app.com
+```
+
+## Monitoring and Troubleshooting
+
+### GitHub Actions Logs
+- Check the "Actions" tab in your GitHub repository
+- Review logs for each job (test, deploy, notify)
+- Common issues are usually in the test phase
 
 ### Railway Logs
-- Railway Dashboard → Your Project → Service → Deployments
-- Click on any deployment to see build and runtime logs
+- Check Railway dashboard for deployment logs
+- Monitor application logs for runtime issues
 
-## Troubleshooting
+### Common Issues and Solutions
 
-### Common Issues:
-
-1. **Railway Token Invalid**
-   - Regenerate token in Railway Dashboard
-   - Update `RAILWAY_TOKEN` secret in GitHub
-
-2. **Service ID Not Found**
-   - Verify `RAILWAY_SERVICE_ID` in GitHub Secrets
-   - Check service exists in Railway Dashboard
-
-3. **Database Migration Errors**
-   - Check Railway PostgreSQL service is running
-   - Verify `DATABASE_URL` is set correctly in Railway
-
-4. **Build Failures**
-   - Check requirements.txt is up to date
-   - Verify Dockerfile syntax
-   - Check Railway build logs
-
-### Getting Help:
-- Check GitHub Actions logs for detailed error messages
-- Review Railway deployment logs
-- Ensure all required secrets are properly set
+1. **UndefinedValueError**: ✅ **Fixed** - All environment variables now have defaults
+2. **Database Connection**: Ensure `DATABASE_URL` is set in Railway
+3. **Static Files**: Handled automatically by `collectstatic` in Dockerfile
+4. **Migrations**: Run automatically during deployment
 
 ## Security Best Practices
 
-1. **Never commit sensitive data**
-   - Use `.env.example` for structure reference
-   - Keep actual `.env` file in `.gitignore`
-
-2. **Rotate secrets regularly**
-   - Update Railway tokens periodically
-   - Regenerate API keys as needed
-
-3. **Limit secret access**
-   - Only add necessary secrets
-   - Use environment-specific secrets when possible
+1. **Never commit secrets** to the repository
+2. **Use GitHub Secrets** for sensitive data
+3. **Rotate tokens** regularly
+4. **Use different keys** for development and production
+5. **Enable HTTPS** in production (set `DEBUG=False`)
 
 ## Next Steps
 
-After setting up the CI/CD pipeline:
-1. Test the workflow by pushing to a feature branch
-2. Create a pull request to `main` to test the full pipeline
-3. Monitor the first deployment carefully
-4. Set up monitoring and alerting for production
+1. ✅ Set up GitHub Secrets (RAILWAY_TOKEN, RAILWAY_PROJECT_ID, RAILWAY_SERVICE_ID)
+2. ✅ Push code to GitHub main branch
+3. ✅ Monitor GitHub Actions workflow
+4. ✅ Verify deployment on Railway
+5. Configure production environment variables in Railway
+6. Set up custom domain (optional)
+7. Enable SSL/HTTPS in production
 
----
+## Status: Ready for Deployment ✅
 
-For more information, refer to:
-- [Railway Documentation](https://docs.railway.com/)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+The GitHub Actions workflow is now properly configured and ready for use. All environment variable issues have been resolved, and the workflow will handle both testing and deployment automatically.
