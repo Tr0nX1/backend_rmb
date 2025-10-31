@@ -163,9 +163,19 @@ jobs:
     steps:
     - name: Deployment Status
       run: |
-        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.deploy.result }}" == "success" ]; then
-          echo "✅ Deployment successful!"
+        echo "Test result: ${{ needs.test.result }}"
+        echo "Deploy result: ${{ needs.deploy.result }}"
+        
+        if [ "${{ needs.test.result }}" == "success" ]; then
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
+            echo "✅ Tests passed! Deployment skipped (not on main branch or not a push event)"
+          else
+            echo "❌ Deployment failed!"
+            exit 1
+          fi
         else
-          echo "❌ Deployment failed!"
+          echo "❌ Tests failed!"
           exit 1
         fi
