@@ -23,7 +23,6 @@ python-decouple==3.8
 
 # Payment Processing
 razorpay==2.0.0
-phonepe-sdk==2.1.5
 
 # Production Server and Static Files
 gunicorn==23.0.0
