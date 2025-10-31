@@ -98,21 +98,62 @@ jobs:
         curl -fsSL https://railway.com/install.sh | sh
         echo "$HOME/.railway/bin" >> $GITHUB_PATH
         
+    - name: Verify Railway CLI Installation
+      run: |
+        railway --version
+        
     - name: Deploy to Railway
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       run: |
         railway login --token $RAILWAY_TOKEN
         railway link ${{ secrets.RAILWAY_PROJECT_ID }}
-        railway up --service ${{ secrets.RAILWAY_SERVICE_ID }}
         
-    - name: Run Railway migrations
+        # Set environment variables for production
+        railway variables set DEBUG=False
+        railway variables set DJANGO_SETTINGS_MODULE=repairmybike.settings
+        railway variables set PYTHONPATH=/app
+        
+        # Deploy using Docker
+        railway up --detach
+        
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 60
+        
+    - name: Verify deployment
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       run: |
         railway login --token $RAILWAY_TOKEN
         railway link ${{ secrets.RAILWAY_PROJECT_ID }}
-        railway run --service ${{ secrets.RAILWAY_SERVICE_ID }} python manage.py migrate
+        
+        # Get the deployment URL
+        RAILWAY_URL=$(railway status --json | jq -r '.deployments[0].url // empty')
+        
+        if [ -n "$RAILWAY_URL" ]; then
+          echo "Deployment URL: $RAILWAY_URL"
+          
+          # Test health endpoint
+          for i in {1..10}; do
+            if curl -f "$RAILWAY_URL/health/" > /dev/null 2>&1; then
+              echo "✅ Health check passed!"
+              break
+            else
+              echo "⏳ Waiting for application to start... (attempt $i/10)"
+              sleep 30
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "❌ Health check failed after 10 attempts"
+              exit 1
+            fi
+          done
+        else
+          echo "❌ Could not get deployment URL"
+          exit 1
+        fi
 
   notify:
     needs: [test, deploy]
