@@ -103,6 +103,11 @@ celerybeat.pid
 
 # Environments
 .env
+<<<<<<< HEAD
+=======
+.env.local
+.env.production
+>>>>>>> 5ec052d8581aec245c0c5aae78419ffdcaeea621
 .venv
 env/
 venv/
@@ -129,6 +134,7 @@ dmypy.json
 .pyre/
 
 # Django specific
+<<<<<<< HEAD
 *.log
 local_settings.py
 db.sqlite3
@@ -143,6 +149,13 @@ static/
 .env.development
 .env.test
 .env.production
+=======
+media/
+staticfiles/
+static/
+logs/
+*.log
+>>>>>>> 5ec052d8581aec245c0c5aae78419ffdcaeea621
 
 # IDE
 .vscode/
@@ -151,7 +164,11 @@ static/
 *.swo
 *~
 
+<<<<<<< HEAD
 # OS generated files
+=======
+# OS
+>>>>>>> 5ec052d8581aec245c0c5aae78419ffdcaeea621
 .DS_Store
 .DS_Store?
 ._*
@@ -160,6 +177,7 @@ static/
 ehthumbs.db
 Thumbs.db
 
+<<<<<<< HEAD
 # Logs
 logs/
 *.log
@@ -293,3 +311,22 @@ service-account-key.json
 # Local configuration files
 config.local.json
 settings.local.py
+=======
+# Production files
+.env.production
+key.config
+
+# Database
+*.sqlite3
+*.db
+
+# Node modules (if any frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+>>>>>>> 5ec052d8581aec245c0c5aae78419ffdcaeea621

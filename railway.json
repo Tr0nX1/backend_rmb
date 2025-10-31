@@ -1,0 +1,22 @@
+{
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/health/",
+    "healthcheckTimeout": 300,
+    "startCommand": "./railway_deploy.sh"
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "DEBUG": "False",
+        "DJANGO_SETTINGS_MODULE": "repairmybike.settings",
+        "PYTHONPATH": "/app",
+        "PORT": "8000"
+      }
+    }
+  }
+}
